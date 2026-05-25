@@ -25,7 +25,7 @@ export class Organization {
   @Column({ type: 'float', default: 29.99 })
   pricePerUser: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true, default: null })
   stripeCustomerId: string | null;
 
   @CreateDateColumn()
