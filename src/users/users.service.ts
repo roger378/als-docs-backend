@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from './user.entity';
 import { Organization } from '../organizations/organization.entity';
@@ -10,10 +10,12 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
-
-    @InjectRepository(Organization)
-    private readonly orgRepo: Repository<Organization>,
+    private readonly dataSource: DataSource,
   ) {}
+
+  private get orgRepo(): Repository<Organization> {
+    return this.dataSource.getRepository(Organization);
+  }
 
   findByEmail(email: string) {
     return this.usersRepo.findOne({ where: { email }, relations: ['organization'] });
