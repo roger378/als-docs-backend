@@ -20,7 +20,7 @@ export class BillingService {
   async createCheckoutSession(org: Organization, userCount: number, returnUrl: string) {
     const s = createStripe();
     const priceId = process.env.STRIPE_PRICE_ID;
-    if (!priceId) throw new Error('STRIPE_PRICE_ID is not configured. Create a $29.99/user/month price in your Stripe dashboard and set this env var.');
+    if (!priceId) throw new Error('STRIPE_PRICE_ID is not configured. Create a $49.99/user/month price in your Stripe dashboard and set this env var.');
 
     let customerId = org.stripeCustomerId ?? undefined;
     if (!customerId) {

@@ -66,7 +66,7 @@ export class OrganizationsService {
     const org = await this.orgRepo.findOne({ where: { id: orgId } });
     const includedProjects = (org?.projectLimit ?? 5) * memberCount;
     const extraProjects = Math.max(0, projectCount - includedProjects);
-    const monthlyBase = memberCount * (org?.pricePerUser ?? 29.99);
+    const monthlyBase = memberCount * (org?.pricePerUser ?? 49.99);
     const monthlyExtras = extraProjects * (org?.pricePerExtraProject ?? 5.0);
 
     return {
@@ -81,7 +81,7 @@ export class OrganizationsService {
       breakdown: {
         base: +monthlyBase.toFixed(2),
         extras: +monthlyExtras.toFixed(2),
-        pricePerUser: org?.pricePerUser ?? 29.99,
+        pricePerUser: org?.pricePerUser ?? 49.99,
         pricePerExtraProject: org?.pricePerExtraProject ?? 5.0,
       },
     };

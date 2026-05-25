@@ -22,7 +22,7 @@ export class Organization {
   @Column({ type: 'float', default: 5.0 })
   pricePerExtraProject: number;
 
-  @Column({ type: 'float', default: 29.99 })
+  @Column({ type: 'float', default: 49.99 })
   pricePerUser: number;
 
   @Column({ type: 'varchar', nullable: true, default: null })
