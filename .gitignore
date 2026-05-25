@@ -3,6 +3,12 @@
 /node_modules
 /build
 
+# uploads (user files — not in git)
+/uploads
+
+# Claude Code session files
+.claude/
+
 # Logs
 logs
 *.log
