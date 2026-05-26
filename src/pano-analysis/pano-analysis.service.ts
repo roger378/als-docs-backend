@@ -240,7 +240,7 @@ export class PanoAnalysisService {
   }
 
   buildResult(claudeData: any, cameraHeightOverrideFt?: number): PanoAnalysisResult {
-    const cameraHeight = cameraHeightOverrideFt ?? claudeData.cameraHeightFeet ?? 4.5;
+    const cameraHeight = cameraHeightOverrideFt ?? claudeData.cameraHeightFeet ?? 5.5;
     const ceilingHeightFeet: number | null =
       claudeData.ceilingHeightFeet != null && Number.isFinite(Number(claudeData.ceilingHeightFeet))
         ? Math.round(Number(claudeData.ceilingHeightFeet) * 10) / 10
