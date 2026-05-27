@@ -41,6 +41,47 @@ export class Insta360Controller {
     return this.cameraService.takePicture();
   }
 
+  /**
+   * Snapshot file list → trigger shutter → wait for NEW file → download it → create PanoCapture.
+   * This is the most reliable capture flow — immune to sort order and timing issues.
+   */
+  @Post('capture-and-pull')
+  async captureAndPull(
+    @Body() body: { captureSessionId?: number; sequenceNumber?: number },
+  ) {
+    // 1. Snapshot current file names
+    const beforeFiles = await this.cameraService.listFiles(10);
+    const beforeNames = new Set(beforeFiles.map((f) => f.name));
+
+    // 2. Trigger shutter
+    const capture = await this.cameraService.takePicture();
+
+    // 3. Try command polling first; fall back to waiting for a new file
+    let cameraFileUrl: string;
+    try {
+      if (capture.commandId) {
+        cameraFileUrl = await this.cameraService.waitForCapture(capture.commandId);
+      } else {
+        cameraFileUrl = await this.cameraService.waitForNewFile(beforeNames);
+      }
+    } catch {
+      cameraFileUrl = await this.cameraService.waitForNewFile(beforeNames);
+    }
+
+    // 4. Download and save
+    const originalName = cameraFileUrl.split('/').pop() ?? 'capture.jpg';
+    const saved = await this.cameraService.pullImageByUrl(cameraFileUrl, originalName);
+
+    // 5. Create PanoCapture record
+    const pano = await this.panoCapturesService.create({
+      fileUrl: saved.url,
+      captureSessionId: body.captureSessionId ?? 0,
+      sequenceNumber: body.sequenceNumber ?? 1,
+    });
+
+    return { ...saved, panoCapture: pano };
+  }
+
   /** Poll the status of a capture command */
   @Get('capture/status/:commandId')
   captureStatus(@Param('commandId') commandId: string) {

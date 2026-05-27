@@ -125,7 +125,7 @@ export class Insta360Service {
       }
     }
 
-    // Fallback: list files and return the first (most recent) one
+    // Fallback: return first file from list (caller should use waitForNewFile instead)
     this.logger.warn(`waitForCapture fallback: listing files for commandId ${commandId}`);
     const files = await this.listFiles(1);
     if (!files.length) throw new Error('No images found on camera after capture.');
@@ -137,6 +137,25 @@ export class Insta360Service {
    * If commandId is provided, waits for that specific capture to finish.
    * Otherwise falls back to listing files (less reliable).
    */
+  /**
+   * Polls listFiles until a file appears whose name is NOT in beforeNames.
+   * This is the most reliable way to detect a newly captured photo.
+   */
+  async waitForNewFile(beforeNames: Set<string>, maxWaitMs = 45000): Promise<string> {
+    const start = Date.now();
+    while (Date.now() - start < maxWaitMs) {
+      await new Promise((r) => setTimeout(r, 1500));
+      const files = await this.listFiles(10);
+      const newFile = files.find((f) => f.name && !beforeNames.has(f.name));
+      if (newFile) {
+        this.logger.log(`New file detected: ${newFile.name}`);
+        return newFile.fileUrl;
+      }
+      this.logger.log(`Waiting for new file... (${Math.round((Date.now() - start) / 1000)}s)`);
+    }
+    throw new Error('New photo did not appear in camera file list within 45 seconds.');
+  }
+
   async pullLatestImage(commandId?: string): Promise<{
     filename: string;
     url: string;
@@ -145,18 +164,16 @@ export class Insta360Service {
     mimeType: string;
   }> {
     let cameraFileUrl: string;
-    let originalName: string;
 
     if (commandId) {
       cameraFileUrl = await this.waitForCapture(commandId);
-      originalName = cameraFileUrl.split('/').pop() ?? 'capture.jpg';
     } else {
       const files = await this.listFiles(1);
       if (!files.length) throw new Error('No images found on camera.');
       cameraFileUrl = files[0].fileUrl;
-      originalName = files[0].name;
     }
 
+    const originalName = cameraFileUrl.split('/').pop() ?? 'capture.jpg';
     return this.pullImageByUrl(cameraFileUrl, originalName);
   }
 
