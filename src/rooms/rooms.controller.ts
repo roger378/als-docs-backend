@@ -8,10 +8,14 @@ import {
   Put,
 } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
+import { SketchService } from '../sketch/sketch.service';
 
 @Controller('rooms')
 export class RoomsController {
-  constructor(private readonly roomsService: RoomsService) {}
+  constructor(
+    private readonly roomsService: RoomsService,
+    private readonly sketchService: SketchService,
+  ) {}
 
   @Get()
   findAll() {
@@ -56,6 +60,11 @@ export class RoomsController {
   @Post('generate-from-capture')
   generateFromCapture(@Body() body: any) {
     return this.roomsService.generateFromCapture(body);
+  }
+
+  @Post('sketch')
+  previewSketch(@Body() body: { walls: any[] }) {
+    return this.sketchService.generateSketch(body.walls ?? []);
   }
 
   @Delete(':id')
