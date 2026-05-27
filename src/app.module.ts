@@ -44,6 +44,7 @@ import { Organization } from './organizations/organization.entity';
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
+      url: process.env.DATABASE_URL,
       host: process.env.DB_HOST ?? 'localhost',
       port: Number(process.env.DB_PORT ?? 5432),
       username: process.env.DB_USERNAME ?? 'postgres',

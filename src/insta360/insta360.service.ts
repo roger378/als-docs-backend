@@ -103,23 +103,61 @@ export class Insta360Service {
   // ── Pull image to server ───────────────────────────────────────────────────
 
   /**
-   * Downloads the most recent image from the camera and saves it to ./uploads/.
-   * Returns the saved file URL and metadata.
+   * Polls a takePicture command until done (max 30s), then returns the file URL.
+   * Falls back to listFiles if the command result has no fileUrl.
    */
-  async pullLatestImage(): Promise<{
+  async waitForCapture(commandId: string, maxWaitMs = 30000): Promise<string> {
+    const pollInterval = 800;
+    const start = Date.now();
+
+    while (Date.now() - start < maxWaitMs) {
+      await new Promise((r) => setTimeout(r, pollInterval));
+      const status = await this.getCommandStatus(commandId);
+      this.logger.log(`Command ${commandId} state: ${status.state}`);
+
+      if (status.state === 'done') {
+        const fileUrl = status.results?.fileUrl ?? status.results?._fileUrl;
+        if (fileUrl) return fileUrl;
+        break; // done but no fileUrl — fall through to listFiles
+      }
+      if (status.state === 'error') {
+        throw new Error(`Camera capture failed: ${status.error?.message ?? 'unknown'}`);
+      }
+    }
+
+    // Fallback: list files and return the first (most recent) one
+    this.logger.warn(`waitForCapture fallback: listing files for commandId ${commandId}`);
+    const files = await this.listFiles(1);
+    if (!files.length) throw new Error('No images found on camera after capture.');
+    return files[0].fileUrl;
+  }
+
+  /**
+   * Downloads the most recent image from the camera and saves it to ./uploads/.
+   * If commandId is provided, waits for that specific capture to finish.
+   * Otherwise falls back to listing files (less reliable).
+   */
+  async pullLatestImage(commandId?: string): Promise<{
     filename: string;
     url: string;
     originalName: string;
     size: number;
     mimeType: string;
   }> {
-    const files = await this.listFiles(1);
+    let cameraFileUrl: string;
+    let originalName: string;
 
-    if (!files.length) {
-      throw new Error('No images found on camera.');
+    if (commandId) {
+      cameraFileUrl = await this.waitForCapture(commandId);
+      originalName = cameraFileUrl.split('/').pop() ?? 'capture.jpg';
+    } else {
+      const files = await this.listFiles(1);
+      if (!files.length) throw new Error('No images found on camera.');
+      cameraFileUrl = files[0].fileUrl;
+      originalName = files[0].name;
     }
 
-    return this.pullImageByUrl(files[0].fileUrl, files[0].name);
+    return this.pullImageByUrl(cameraFileUrl, originalName);
   }
 
   async pullImageByUrl(

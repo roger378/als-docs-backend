@@ -1,5 +1,4 @@
-import { Body, Controller, Get, Post, Param, Res } from '@nestjs/common';
-import { Response } from 'express';
+import { Body, Controller, Get, Post, Param } from '@nestjs/common';
 import { Insta360Service } from './insta360.service';
 import { PanoCapturesService } from '../pano-captures/pano-captures.service';
 import { PanoAnalysisService } from '../pano-analysis/pano-analysis.service';
@@ -59,9 +58,10 @@ export class Insta360Controller {
       captureSessionId?: number;
       roomId?: number;
       sequenceNumber?: number;
+      commandId?: string;
     },
   ) {
-    const saved = await this.cameraService.pullLatestImage();
+    const saved = await this.cameraService.pullLatestImage(body.commandId);
 
     const pano = await this.panoCapturesService.create({
       fileUrl: saved.url,
